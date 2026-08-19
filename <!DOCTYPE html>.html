@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caïssa | Wooden Chess Review & Feed</title>
+  
+  <!-- Google Fonts: Playfair Display (Serif) & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Chess.js Library for Game Logic -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="logo">
+        <i class="fa-solid fa-chess-knight"></i>
+        <span>CAÏSSA</span>
+      </div>
+      <div class="nav-tagline">Wooden Room Chess Feed & Engine Review</div>
+      <div class="nav-actions">
+        <button id="quickPostBtn" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i> Share Game
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- Share Game Input Widget -->
+    <section class="share-card wood-panel">
+      <div class="card-title">
+        <i class="fa-solid fa-link"></i> Post a Chess.com Game
+      </div>
+      <p class="card-subtitle">Paste any Chess.com live or daily game URL to generate an interactive review card.</p>
+      
+      <form id="postForm" class="post-form">
+        <div class="input-group">
+          <i class="fa-solid fa-chess-board input-icon"></i>
+          <input 
+            type="url" 
+            id="gameUrlInput" 
+            placeholder="https://www.chess.com/game/live/1092837462..." 
+            required 
+          />
+        </div>
+        <button type="submit" class="btn btn-gold" id="submitGameBtn">
+          <span>Fetch & Post</span>
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+      <div id="fetchLoader" class="fetch-loader hidden">
+        <i class="fa-solid fa-circle-notch fa-spin"></i> Fetching game data from Chess.com...
+      </div>
+      <div id="errorMessage" class="error-banner hidden"></div>
+    </section>
+
+    <!-- Scrollable Feed Section -->
+    <section class="feed-header">
+      <h2><i class="fa-solid fa-fire"></i> Community Game Feed</h2>
+      <span class="feed-badge">Live Engine Analysis Available</span>
+    </section>
+
+    <div id="gameFeed" class="feed-container">
+      <!-- Dynamic Post Cards will be injected here via app.js -->
+    </div>
+  </main>
+
+  <!-- Interactive Analysis Modal (Stockfish & Wooden Board) -->
+  <div id="analysisModal" class="modal-backdrop hidden">
+    <div class="modal-window wood-panel-modal">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="game-meta-header">
+          <h3 id="modalTitle">Analysis Board</h3>
+          <div id="modalSubTitle" class="modal-players">Player 1 vs Player 2</div>
+        </div>
+        <button id="closeModalBtn" class="btn-close">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="modal-body">
+        
+        <!-- Left: Fluid Evaluation Bar -->
+        <div class="eval-column">
+          <div class="eval-meter">
+            <div id="evalScoreLabel" class="eval-score">+0.0</div>
+            <div id="evalFill" class="eval-fill" style="height: 50%;"></div>
+          </div>
+        </div>
+
+        <!-- Center: Interactive Wooden Board -->
+        <div class="board-column">
+          <div class="board-wood-frame">
+            <div id="interactiveBoard" class="chessboard">
+              <!-- 64 Squares dynamically rendered -->
+            </div>
+            <!-- Coordinates -->
+            <div class="board-coords-files"><span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span></div>
+            <div class="board-coords-ranks"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+          </div>
+
+          <!-- Playback Controls -->
+          <div class="playback-bar">
+            <button id="firstMoveBtn" class="btn-icon" title="First Move"><i class="fa-solid fa-backward-step"></i></button>
+            <button id="prevMoveBtn" class="btn-icon" title="Previous Move"><i class="fa-solid fa-chevron-left"></i></button>
+            <button id="autoPlayBtn" class="btn-icon btn-play" title="Auto Play"><i class="fa-solid fa-play"></i></button>
+            <button id="nextMoveBtn" class="btn-icon" title="Next Move"><i class="fa-solid fa-chevron-right"></i></button>
+            <button id="lastMoveBtn" class="btn-icon" title="Last Move"><i class="fa-solid fa-forward-step"></i></button>
+            <button id="flipBoardBtn" class="btn-icon" title="Flip Board"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+
+        <!-- Right: Engine Data, Move List & Accuracy -->
+        <div class="analysis-column">
+          
+          <!-- Accuracy / Game Summary Card -->
+          <div class="stats-panel">
+            <div class="accuracy-row">
+              <div class="accuracy-card white-card">
+                <span class="acc-title">White Accuracy</span>
+                <span id="whiteAccScore" class="acc-val">91.4%</span>
+              </div>
+              <div class="accuracy-card black-card">
+                <span class="acc-title">Black Accuracy</span>
+                <span id="blackAccScore" class="acc-val">84.2%</span>
+              </div>
+            </div>
+
+            <!-- Engine Move Feedback -->
+            <div id="moveQualityBox" class="move-quality-box">
+              <div class="quality-badge badge-best" id="moveBadge">
+                <i class="fa-solid fa-circle-check"></i> <span id="moveBadgeText">Best Move</span>
+              </div>
+              <div class="engine-feedback-text">
+                <p id="engineEvalText">Evaluation: <strong>+0.45</strong></p>
+                <p id="engineBestLine">Stockfish Best: <strong id="bestMoveSug">Nf3</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Move History Table with Badges -->
+          <div class="move-history-container">
+            <div class="move-history-header">Move History & Review</div>
+            <div id="moveList" class="move-list-grid">
+              <!-- Move pairs injected here -->
+            </div>
+          </div>
+
+          <!-- Full Engine Scan Trigger -->
+          <div class="engine-footer">
+            <button id="runFullEngineBtn" class="btn btn-gold btn-block">
+              <i class="fa-solid fa-microchip"></i> <span id="engineBtnText">Run Deep Engine Review</span>
+            </button>
+            <div id="engineProgressBar" class="progress-bar-container hidden">
+              <div id="engineProgressFill" class="progress-bar-fill"></div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
